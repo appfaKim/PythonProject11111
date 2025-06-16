@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>일본 스트리머 상세 정보</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="container">
+        <!-- 네비게이션 -->
+        <nav class="main-nav">
+            <ul>
+                <li><a href="/">스트리머 관리</a></li>
+                <li><a href="/jp-streamers">일본 스트리머</a></li>
+                <li class="active"><a href="#" id="currentStreamerNav">스트리머 상세</a></li>
+            </ul>
+        </nav>
+
+        <!-- 로딩 -->
+        <div id="loading" class="loading">
+            <div class="spinner"></div>
+            <span>데이터를 불러오는 중...</span>
+        </div>
+
+        <!-- 스트리머 상세 정보 -->
+        <div id="streamerDetail" class="streamer-detail" style="display: none;">
+            <!-- 상단 프로필 -->
+            <div class="profile-section">
+                <div class="profile-header">
+                    <h1 id="streamerName"></h1>
+                    <div class="profile-actions">
+                        <button id="editBtn" class="btn btn-primary">✏️ 수정</button>
+                        <button id="deleteBtn" class="btn btn-danger">🗑️ 삭제</button>
+                        <a href="/jp-streamers" class="btn btn-outline">← 목록으로</a>
+                    </div>
+                </div>
+                
+                <div class="profile-info">
+                    <div class="info-item">
+                        <span class="label">한글:</span>
+                        <span id="koreanName" class="value"></span>
+                    </div>
+                    <div class="info-item">
+                        <span class="label">영문:</span>
+                        <span id="englishName" class="value"></span>
+                    </div>
+                    <div class="info-item">
+                        <span class="label">성별:</span>
+                        <span id="gender" class="value"></span>
+                    </div>
+                    <div class="info-item">
+                        <span class="label">플랫폼:</span>
+                        <span id="platform" class="value"></span>
+                    </div>
+                    <div class="info-item">
+                        <span class="label">평시청자수:</span>
+                        <span id="avgViewers" class="value"></span>
+                    </div>
+                    <div class="info-item">
+                        <span class="label">소통 단계:</span>
+                        <span id="communicationLevel" class="value"></span>
+                    </div>
+                    <div class="info-item">
+                        <span class="label">포스팅 갯수:</span>
+                        <span id="postCount" class="value"></span>
+                    </div>
+                    <div class="info-item full-width">
+                        <span class="label">스트리머 페이지:</span>
+                        <a id="streamerLink" href="#" target="_blank" class="value link"></a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 중간 설명 -->
+            <div class="description-section">
+                <h2>방송 설명</h2>
+                <div id="description" class="description-content"></div>
+                
+                <div class="add-description">
+                    <textarea id="newDescription" placeholder="새로운 설명을 입력하세요..."></textarea>
+                    <button id="addDescriptionBtn" class="btn btn-primary">추가</button>
+                </div>
+            </div>
+
+            <!-- 하단 목록 -->
+            <div class="tabs">
+                <button class="tab-button active" data-tab="twitter">트위터 관리</button>
+                <button class="tab-button" data-tab="communication">소통 내용</button>
+            </div>
+
+            <!-- 트위터 관리 탭 -->
+            <div id="twitterTab" class="tab-content active">
+                <div class="section-header">
+                    <h2>트위터 관리</h2>
+                    <button id="addTwitterBtn" class="btn btn-primary">➕ 추가</button>
+                </div>
+                
+                <div class="table-container">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>날짜</th>
+                                <th>포스팅 취지</th>
+                                <th>포스팅 링크</th>
+                                <th>효과</th>
+                                <th>관리</th>
+                            </tr>
+                        </thead>
+                        <tbody id="twitterTableBody">
+                            <!-- 트위터 관리 데이터가 여기에 추가됩니다 -->
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div id="noTwitterData" class="empty-state" style="display: none;">
+                    <h3>트위터 관리 데이터가 없습니다</h3>
+                    <p>새로운 트위터 관리 항목을 추가해보세요.</p>
+                </div>
+            </div>
+
+            <!-- 소통 내용 탭 -->
+            <div id="communicationTab" class="tab-content">
+                <div class="section-header">
+                    <h2>소통 내용</h2>
+                    <button id="addCommunicationBtn" class="btn btn-primary">➕ 추가</button>
+                </div>
+                
+                <div class="table-container">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>날짜</th>
+                                <th>소통 내용 요약</th>
+                                <th>관리</th>
+                            </tr>
+                        </thead>
+                        <tbody id="communicationTableBody">
+                            <!-- 소통 내용 데이터가 여기에 추가됩니다 -->
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div id="noCommunicationData" class="empty-state" style="display: none;">
+                    <h3>소통 내용 데이터가 없습니다</h3>
+                    <p>새로운 소통 내용을 추가해보세요.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 스트리머 수정 모달 -->
+    <div id="editModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>스트리머 정보 수정</h2>
+                <button id="closeEditModal" class="close-btn">✕</button>
+            </div>
+            
+            <form id="editForm" class="modal-body">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="edit_broadcast_name">방송이름 *</label>
+                        <input type="text" id="edit_broadcast_name" name="broadcast_name" required placeholder="방송이름">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="edit_korean_name">한글</label>
+                        <input type="text" id="edit_korean_name" name="korean_name" placeholder="한글 이름">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="edit_english_name">영문</label>
+                        <input type="text" id="edit_english_name" name="english_name" placeholder="영문 이름">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="edit_gender">성별</label>
+                        <select id="edit_gender" name="gender">
+                            <option value="">선택</option>
+                            <option value="여성">여성</option>
+                            <option value="남성">남성</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="edit_platform">플랫폼</label>
+                        <select id="edit_platform" name="platform">
+                            <option value="">선택</option>
+                            <option value="YouTube">YouTube</option>
+                            <option value="Twitch">Twitch</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="edit_avg_viewers">평시청자수</label>
+                        <input type="number" id="edit_avg_viewers" name="avg_viewers" placeholder="평균 시청자 수">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="edit_communication_level">소통 단계</label>
+                        <select id="edit_communication_level" name="communication_level">
+                            <option value="">선택</option>
+                            <option value="없음">없음</option>
+                            <option value="포스팅 언급">포스팅 언급</option>
+                            <option value="트위터 대화">트위터 대화</option>
+                            <option value="디스코드 연결">디스코드 연결</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="edit_streamer_link">스트리머페이지 링크</label>
+                        <input type="url" id="edit_streamer_link" name="streamer_link" placeholder="https://...">
+                    </div>
+                </div>
+            </form>
+            
+            <div class="modal-footer">
+                <button type="button" id="cancelEditBtn" class="btn btn-outline">취소</button>
+                <button type="submit" form="editForm" id="saveEditBtn" class="btn btn-primary">💾 저장</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 트위터 관리 추가 모달 -->
+    <div id="twitterModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>트위터 관리 추가</h2>
+                <button id="closeTwitterModal" class="close-btn">✕</button>
+            </div>
+            
+            <form id="twitterForm" class="modal-body">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="twitter_date">날짜 *</label>
+                        <input type="date" id="twitter_date" name="date" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="twitter_post_purpose">포스팅 취지 *</label>
+                        <input type="text" id="twitter_post_purpose" name="post_purpose" required placeholder="포스팅 취지">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="twitter_post_link">포스팅 링크 *</label>
+                        <input type="url" id="twitter_post_link" name="post_link" required placeholder="https://twitter.com/...">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="twitter_effect">효과</label>
+                        <input type="text" id="twitter_effect" name="effect" placeholder="좋아요, 리트윗 등">
+                    </div>
+                </div>
+            </form>
+            
+            <div class="modal-footer">
+                <button type="button" id="cancelTwitterBtn" class="btn btn-outline">취소</button>
+                <button type="submit" form="twitterForm" id="saveTwitterBtn" class="btn btn-primary">💾 저장</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 소통 내용 추가 모달 -->
+    <div id="communicationModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>소통 내용 추가</h2>
+                <button id="closeCommunicationModal" class="close-btn">✕</button>
+            </div>
+            
+            <form id="communicationForm" class="modal-body">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="communication_date">날짜 *</label>
+                        <input type="date" id="communication_date" name="date" required>
+                    </div>
+                    
+                    <div class="form-group full-width">
+                        <label for="communication_summary">소통 내용 요약 *</label>
+                        <textarea id="communication_summary" name="summary" rows="3" required placeholder="소통 내용 요약"></textarea>
+                    </div>
+                </div>
+            </form>
+            
+            <div class="modal-footer">
+                <button type="button" id="cancelCommunicationBtn" class="btn btn-outline">취소</button>
+                <button type="submit" form="communicationForm" id="saveCommunicationBtn" class="btn btn-primary">💾 저장</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 삭제 확인 모달 -->
+    <div id="deleteModal" class="modal">
+        <div class="modal-content" style="max-width: 500px;">
+            <div class="modal-header">
+                <h2>스트리머 삭제</h2>
+                <button id="closeDeleteModal" class="close-btn">✕</button>
+            </div>
+            
+            <div class="modal-body">
+                <p>정말로 이 스트리머를 삭제하시겠습니까?</p>
+                <p>관련된 모든 트위터 관리 및 소통 내용 데이터도 함께 삭제됩니다.</p>
+            </div>
+            
+            <div class="modal-footer">
+                <button type="button" id="cancelDeleteBtn" class="btn btn-outline">취소</button>
+                <button type="button" id="confirmDeleteBtn" class="btn btn-danger">삭제</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 항목 삭제 확인 모달 -->
+    <div id="deleteItemModal" class="modal">
+        <div class="modal-content" style="max-width: 500px;">
+            <div class="modal-header">
+                <h2 id="deleteItemTitle">항목 삭제</h2>
+                <button id="closeDeleteItemModal" class="close-btn">✕</button>
+            </div>
+            
+            <div class="modal-body">
+                <p id="deleteItemMessage">정말로 이 항목을 삭제하시겠습니까?</p>
+            </div>
+            
+            <div class="modal-footer">
+                <button type="button" id="cancelDeleteItemBtn" class="btn btn-outline">취소</button>
+                <button type="button" id="confirmDeleteItemBtn" class="btn btn-danger">삭제</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 토스트 -->
+    <div id="toast" class="toast" style="display: none;">
+        <span id="toastMessage"></span>
+        <button id="toastClose">✕</button>
+    </div>
+
+    <script src="/static/jp-streamer-detail.js"></script>
+</body>
+</html>

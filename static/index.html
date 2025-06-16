@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>스트리머 관리 시스템</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="container">
+        <!-- 네비게이션 -->
+        <nav class="main-nav">
+            <ul>
+                <li class="active"><a href="/">스트리머 관리</a></li>
+                <li><a href="/jp-streamers">일본 스트리머</a></li>
+            </ul>
+        </nav>
+
+        <!-- 헤더 -->
+        <header class="header">
+            <h1>🎮 스트리머 관리 시스템</h1>
+            <div class="header-actions">
+                <button id="refreshBtn" class="btn btn-outline">🔄 새로고침</button>
+                <button id="addBtn" class="btn btn-primary">➕ 스트리머 추가</button>
+            </div>
+        </header>
+
+        <!-- 검색 및 필터 -->
+        <div class="search-section">
+            <div class="search-container">
+                <input type="text" id="searchInput" placeholder="스트리머 검색..." class="search-input">
+                <div class="search-tabs">
+                    <button class="tab-btn active" data-field="name">이름으로 검색</button>
+                    <button class="tab-btn" data-field="riot_id_name">라이엇 ID로 검색</button>
+                </div>
+            </div>
+            
+            <div class="filters">
+                <select id="statusFilter" class="filter-select">
+                    <option value="">모든 상태</option>
+                    <option value="Streamer">STREAMER</option>
+                    <option value="pro">PRO</option>
+                </select>
+                <select id="countryFilter" class="filter-select">
+                    <option value="">모든 국가</option>
+                    <option value="KR">대한민국</option>
+                    <option value="US">미국</option>
+                    <option value="CN">중국</option>
+                    <option value="JP">일본</option>
+                </select>
+                <select id="positionFilter" class="filter-select">
+                    <option value="">모든 포지션</option>
+                    <option value="Top">Top</option>
+                    <option value="Jungle">Jungle</option>
+                    <option value="Mid">Mid</option>
+                    <option value="ADC">ADC</option>
+                    <option value="Support">Support</option>
+                </select>
+                <select id="deleteStatusFilter" class="filter-select">
+                    <option value="active">활성 스트리머</option>
+                    <option value="temp_deleted">임시 삭제됨</option>
+                </select>
+                <button id="clearFiltersBtn" class="btn btn-outline btn-sm">❌ 필터 초기화</button>
+            </div>
+        </div>
+
+        <!-- 대량 작업 -->
+        <div id="bulkActions" class="bulk-actions" style="display: none;">
+            <div class="bulk-info">
+                <span id="selectedCount">0명이 선택되었습니다</span>
+            </div>
+            <div class="bulk-buttons">
+                <button id="bulkTempDeleteBtn" class="btn btn-warning">🗑️ 임시 삭제</button>
+                <button id="bulkPermanentDeleteBtn" class="btn btn-danger">⚠️ 영구 삭제</button>
+                <button id="bulkRestoreBtn" class="btn btn-success" style="display: none;">♻️ 복구</button>
+            </div>
+        </div>
+
+        <!-- 로딩 -->
+        <div id="loading" class="loading" style="display: none;">
+            <div class="spinner"></div>
+            <span>데이터를 불러오는 중...</span>
+        </div>
+
+        <!-- 테이블 -->
+        <div class="table-container">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th><input type="checkbox" id="selectAll"></th>
+                        <th>상태</th>
+                        <th>이름</th>
+                        <th>라이엇 ID</th>
+                        <th>태그라인</th>
+                        <th>국가</th>
+                        <th>포지션</th>
+                        <th>팀</th>
+                        <th>소셜</th>
+                        <th>관리</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                    <!-- 데이터가 여기에 추가됩니다 -->
+                </tbody>
+            </table>
+        </div>
+
+        <!-- 페이지네이션 -->
+        <div class="pagination">
+            <button id="prevBtn" class="btn btn-outline btn-sm">◀ 이전</button>
+            <span id="pageInfo">1 / 1</span>
+            <button id="nextBtn" class="btn btn-outline btn-sm">다음 ▶</button>
+        </div>
+    </div>
+
+    <!-- 모달 -->
+    <div id="modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">새 스트리머 추가</h2>
+                <button id="closeModal" class="close-btn">✕</button>
+            </div>
+            
+            <form id="streamerForm" class="modal-body">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="status">상태 *</label>
+                        <select id="status" name="status" required>
+                            <option value="Streamer">STREAMER</option>
+                            <option value="pro">PRO</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="name">이름 *</label>
+                        <input type="text" id="name" name="name" required placeholder="스트리머 이름">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="championship_name">대회용 이름</label>
+                        <input type="text" id="championship_name" name="championship_name" placeholder="대회용 이름">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="riot_id_name">라이엇 ID</label>
+                        <input type="text" id="riot_id_name" name="riot_id_name" placeholder="라이엇 ID">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="riot_id_tag_line">태그라인</label>
+                        <input type="text" id="riot_id_tag_line" name="riot_id_tag_line" placeholder="KR1, NA1 등">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="country_iso">국가</label>
+                        <select id="country_iso" name="country_iso">
+                            <option value="">국가 선택</option>
+                            <option value="KR">대한민국</option>
+                            <option value="US">미국</option>
+                            <option value="CN">중국</option>
+                            <option value="JP">일본</option>
+                            <option value="TW">대만</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="position">포지션</label>
+                        <select id="position" name="position">
+                            <option value="">포지션 선택</option>
+                            <option value="Top">Top</option>
+                            <option value="Jungle">Jungle</option>
+                            <option value="Mid">Mid</option>
+                            <option value="ADC">ADC</option>
+                            <option value="Support">Support</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="pro_team">소속 팀</label>
+                        <input type="text" id="pro_team" name="pro_team" placeholder="소속 팀">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="twitch">Twitch</label>
+                        <input type="url" id="twitch" name="twitch" placeholder="https://www.twitch.tv/username">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="youtube">YouTube</label>
+                        <input type="url" id="youtube" name="youtube" placeholder="https://www.youtube.com/channel/...">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="afreecatv">AfreecaTV</label>
+                        <input type="url" id="afreecatv" name="afreecatv" placeholder="https://www.afreecatv.com/username">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="naver_cafe">네이버 카페</label>
+                        <input type="url" id="naver_cafe" name="naver_cafe" placeholder="https://cafe.naver.com/...">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="kick">KICK</label>
+                        <input type="url" id="kick" name="kick" placeholder="https://kick.com/...">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="tiktok">틱톡</label>
+                        <input type="url" id="tiktok" name="tiktok" placeholder="https://www.tiktok.com/@...">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="activate">활성화</label>
+                        <select id="activate" name="activate">
+                            <option value="1">활성화</option>
+                            <option value="0">비활성화</option>
+                        </select>
+                    </div>
+                </div>
+            </form>
+            
+            <div class="modal-footer">
+                <button type="button" id="cancelBtn" class="btn btn-outline">취소</button>
+                <button type="submit" form="streamerForm" id="submitBtn" class="btn btn-primary">💾 저장</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 복구 확인 모달 -->
+    <div id="restoreModal" class="modal">
+        <div class="modal-content" style="max-width: 500px;">
+            <div class="modal-header">
+                <h2>삭제된 스트리머 복구</h2>
+                <button id="closeRestoreModal" class="close-btn">✕</button>
+            </div>
+            
+            <div class="modal-body">
+                <p>이전에 삭제된 스트리머입니다. 복구하시겠습니까?</p>
+                <div id="deletedStreamerInfo" class="deleted-streamer-info">
+                    <!-- 삭제된 스트리머 정보가 여기에 표시됩니다 -->
+                </div>
+            </div>
+            
+            <div class="modal-footer">
+                <button type="button" id="cancelRestoreBtn" class="btn btn-outline">취소</button>
+                <button type="button" id="confirmRestoreBtn" class="btn btn-success">복구</button>
+                <button type="button" id="newStreamerBtn" class="btn btn-primary">새로 추가</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 삭제 확인 모달 -->
+    <div id="deleteModal" class="modal">
+        <div class="modal-content" style="max-width: 500px;">
+            <div class="modal-header">
+                <h2 id="deleteModalTitle">스트리머 삭제</h2>
+                <button id="closeDeleteModal" class="close-btn">✕</button>
+            </div>
+            
+            <div class="modal-body">
+                <p id="deleteModalMessage">정말로 이 스트리머를 삭제하시겠습니까?</p>
+                <div class="delete-options">
+                    <div class="form-group">
+                        <label>
+                            <input type="radio" name="deleteType" value="temp" checked> 임시 삭제 (나중에 복구 가능)
+                        </label>
+                    </div>
+                    <div class="form-group">
+                        <label>
+                            <input type="radio" name="deleteType" value="permanent"> 영구 삭제 (복구 불가능)
+                        </label>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="modal-footer">
+                <button type="button" id="cancelDeleteBtn" class="btn btn-outline">취소</button>
+                <button type="button" id="confirmDeleteBtn" class="btn btn-danger">삭제</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 토스트 -->
+    <div id="toast" class="toast" style="display: none;">
+        <span id="toastMessage"></span>
+        <button id="toastClose">✕</button>
+    </div>
+
+    <script src="/static/script.js"></script>
+</body>
+</html>
